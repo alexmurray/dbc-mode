@@ -76,16 +76,18 @@
 
 
 (defvar dbc-mode-font-lock-defaults
-  `((("\\(CM_ \\(.\\|\n\\)?*;\\)" 1 font-lock-comment-face t)
-     (,(regexp-opt dbc-mode-keywords 'words) . font-lock-keyword-face)
-     ("[[:alnum:]_]+:" . 'font-lock-function-name-face)
-     ("[=:]" . 'font-lock-operator)
+  `(((,(regexp-opt dbc-mode-keywords 'words) . font-lock-keyword-face)
+     ("[=:@]" . 'font-lock-operator)
      (";" . 'font-lock-builtin)
-     ("\\<Vector__XXX\\>" . 'default)
-     ;; variable in service|information|reseau
-     ("\\(\\<[[:alnum:]]+_[[:alnum:]_]+\\>\\( :\\)\\{0,1\\}\\)" . 'font-lock-type-face)
-     ;; number decimal and hex
-     ("\\<\\(0x\\)\\{0,1\\}[0-9ABCDEF@]+\\>" . 'font-lock-constant-face))))
+     ;; message id and name
+     ("BO_ \\([0-9]+ [A-Za-z0-9_]+\\)" 1 font-lock-function-name-face t)
+     ;; signal name
+     ("SG_ \\([A-Za-z0-9_]+\\) : " 1 font-lock-variable-name-face t)
+     ;; number decimal
+     ("\\<-?[0-9.]+\\>" . 'font-lock-constant-face)
+     ;; junk
+     ("\\<[A-Za-z_,]\\>" . 'default)
+     )))
 
 (defvar dbc-mode-syntax-table
   (let ((table (make-syntax-table)))
@@ -94,12 +96,12 @@
     (modify-syntax-entry ?\; ">" table)
     table))
 
-(define-derived-mode dbc-mode text-mode "dbc"
+(define-derived-mode dbc-mode fundamental-mode "dbc"
   "dbc-mode is a major mode for editing CAN DBC files."
   :syntax-table dbc-mode-syntax-table
   (setq font-lock-defaults dbc-mode-font-lock-defaults)
-  (setq imenu-generic-expression '(("Messages" "BO_ \\([0-9]+ [A-Za-z0-9_]+\\)" 1)
-                                   ("Signals" "SG_ \\([A-Za-z0-9_]+\\)" 1)))
+  (setq imenu-generic-expression '(("Messages" "^\\s-*BO_ \\([0-9]+ [A-Za-z0-9_]+\\)" 1)
+                                   ("Signals" "^\\s-*SG_ \\([A-Za-z0-9_]+\\)" 1)))
   (setq comment-start "//")
   (setq comment-end ""))
 
