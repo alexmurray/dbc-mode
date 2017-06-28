@@ -37,16 +37,17 @@
 (defvar dbc-mode-keywords '("VERSION" ; version
                             "NS_" ; net symbol
                             "BS_" ; bit timings section
-                            "BO_" ; message definition
-                            "BU_" ; network node
+                            "BO_" ; message / frame definition
+                            "BU_" ; network node / board unit
                             "BO_TX_BU_"  ; message transmitter
+                            "SG_" ; signal
                             "CM_" ; comment
-                            "CM_ BO_"
+                            "CM_ BO_" ; message / frame comments
+                            "CM_ BU_" ; board unit comments
                             "CM_ EV_"
                             "CM_ SG_" ; signal comment
-                            "SG_"
-                            "BA_DEF_"
-                            "BA_DEF_DEF_"
+                            "BA_DEF_" ; definitions
+                            "BA_DEF_DEF_" ; defaults
                             "BA_DEF_REL_"
                             "BA_DEF_DEF_REL_"
                             "BA_" ; attribute
