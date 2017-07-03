@@ -97,6 +97,33 @@
     (modify-syntax-entry ?\; ">" table)
     table))
 
+(defun dbc-mode-eldoc-function ()
+  "Get documentation for option `eldoc-mode'."
+  (save-excursion
+    ;; for now do documentation for the entire line
+    (let ((line (thing-at-point 'line t))
+          (start nil)
+          (doc nil))
+      (cond
+       ((string-match "^\\s-*SG_ \\([A-Za-z0-9_]+\\)" line)
+        (let ((name (match-string 1 line)))
+          ;; find signal id
+          (when (re-search-backward "^\\s-*BO_ \\([0-9]+\\)" nil t)
+            (let ((id (match-string 1)))
+              (setq start (re-search-forward (format "^\\s-*CM_ SG_ %s %s \""  id name) nil t))))))
+       ((string-match "^\\s-*BO_ \\([0-9]+\\) \\([A-Za-z0-9_]+\\)" line)
+        (let ((id (match-string 1 line)))
+          (setq start (re-search-forward (format "^\\s-*CM_ BO_ %s \""  id) nil t))))
+       ((string-match "^\\s-*BU_:" line)
+        (let ((symbol (thing-at-point 'symbol t)))
+          (when symbol
+            (setq start (re-search-forward (format "^\\s-*CM_ BU_ %s \""  symbol) nil t))))))
+      (if start
+          (when (search-forward "\";" nil t)
+            ;; strip off quote and semicolon
+            (setq doc (buffer-substring-no-properties start (- (point) 2)))))
+      doc)))
+
 (define-derived-mode dbc-mode fundamental-mode "dbc"
   "dbc-mode is a major mode for editing CAN DBC files."
   :syntax-table dbc-mode-syntax-table
@@ -104,7 +131,9 @@
   (setq imenu-generic-expression '(("Messages" "^\\s-*BO_ \\([0-9]+ [A-Za-z0-9_]+\\)" 1)
                                    ("Signals" "^\\s-*SG_ \\([A-Za-z0-9_]+\\)" 1)))
   (setq comment-start "//")
-  (setq comment-end ""))
+  (setq comment-end "")
+  (add-function :before-until (local 'eldoc-documentation-function)
+                #'dbc-mode-eldoc-function))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.dbc\\'" . dbc-mode))
