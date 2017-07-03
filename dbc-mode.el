@@ -102,26 +102,36 @@
   (save-excursion
     ;; for now do documentation for the entire line
     (let ((line (thing-at-point 'line t))
-          (start nil)
+          (identifier nil)
           (doc nil))
       (cond
+       ;; signal definition
        ((string-match "^\\s-*SG_ \\([A-Za-z0-9_]+\\)" line)
         (let ((name (match-string 1 line)))
           ;; find signal id
           (when (re-search-backward "^\\s-*BO_ \\([0-9]+\\)" nil t)
             (let ((id (match-string 1)))
-              (setq start (re-search-forward (format "^\\s-*CM_ SG_ %s %s \""  id name) nil t))))))
+              (when (re-search-forward (format "^\\s-*CM_ SG_ %s %s \""  id name) nil t)
+                (setq identifier (propertize name 'face 'font-lock-variable-name-face)))))))
+       ;; frame definition
        ((string-match "^\\s-*BO_ \\([0-9]+\\) \\([A-Za-z0-9_]+\\)" line)
-        (let ((id (match-string 1 line)))
-          (setq start (re-search-forward (format "^\\s-*CM_ BO_ %s \""  id) nil t))))
+        (let ((id (match-string 1 line))
+              (name (match-string 2 line)))
+          (when (re-search-forward (format "^\\s-*CM_ BO_ %s \""  id) nil t)
+            (setq identifier (propertize name
+                                         'face 'font-lock-function-name-face)))))
+       ;; unit definition
        ((string-match "^\\s-*BU_:" line)
         (let ((symbol (thing-at-point 'symbol t)))
-          (when symbol
-            (setq start (re-search-forward (format "^\\s-*CM_ BU_ %s \""  symbol) nil t))))))
-      (if start
-          (when (search-forward "\";" nil t)
-            ;; strip off quote and semicolon
-            (setq doc (buffer-substring-no-properties start (- (point) 2)))))
+          (when (and symbol
+                     (re-search-forward (format "^\\s-*CM_ BU_ %s \""  symbol) nil t))
+            (setq identifier symbol)))))
+      (let ((start (point)))
+        (when (and identifier
+                   (search-forward "\";" nil t)) ; find end of doc
+          (setq doc (concat identifier ": "
+                            ;; strip off quote and semicolon
+                            (propertize (buffer-substring start (- (point) 2)) 'face nil)))))
       doc)))
 
 (define-derived-mode dbc-mode fundamental-mode "dbc"
