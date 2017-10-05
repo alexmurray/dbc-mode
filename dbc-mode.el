@@ -103,6 +103,8 @@
     ;; for now do documentation for the entire line
     (let ((line (thing-at-point 'line t))
           (identifier nil)
+          (id nil)
+          (type nil)
           (doc nil))
       (cond
        ;; signal definition
@@ -110,28 +112,39 @@
         (let ((name (match-string 1 line)))
           ;; find signal id
           (when (re-search-backward "^\\s-*BO_ \\([0-9]+\\)" nil t)
-            (let ((id (match-string 1)))
-              (when (re-search-forward (format "^\\s-*CM_ SG_ %s %s \""  id name) nil t)
-                (setq identifier (propertize name 'face 'font-lock-variable-name-face)))))))
+            (setq id (match-string 1))
+            (when (re-search-forward (format "^\\s-*CM_ SG_ %s %s \""  id name) nil t)
+              (setq identifier (propertize name 'face 'font-lock-variable-name-face))
+              (setq type 'signal)))))
        ;; frame definition
        ((string-match "^\\s-*BO_ \\([0-9]+\\) \\([A-Za-z0-9_]+\\)" line)
-        (let ((id (match-string 1 line))
-              (name (match-string 2 line)))
+        (let ((name (match-string 2 line)))
+          (setq id (match-string 1 line))
           (when (re-search-forward (format "^\\s-*CM_ BO_ %s \""  id) nil t)
             (setq identifier (propertize name
-                                         'face 'font-lock-function-name-face)))))
+                                         'face 'font-lock-function-name-face))
+            (setq type 'frame))))
        ;; unit definition
        ((string-match "^\\s-*BU_:" line)
         (let ((symbol (thing-at-point 'symbol t)))
           (when (and symbol
                      (re-search-forward (format "^\\s-*CM_ BU_ %s \""  symbol) nil t))
-            (setq identifier symbol)))))
+            (setq identifier symbol)
+            (setq type 'unit)))))
       (let ((start (point)))
         (when (and identifier
                    (search-forward "\";" nil t)) ; find end of doc
           (setq doc (concat identifier ": "
                             ;; strip off quote and semicolon
-                            (propertize (buffer-substring start (- (point) 2)) 'face nil)))))
+                            (propertize (buffer-substring start (- (point) 2)) 'face nil))))
+        ;; if is a signal then try find value definitions for it as well
+        (when (and (eq type 'signal)
+                   (re-search-forward (format "^\\s-*VAL_ %s %s "  id (substring-no-properties identifier)) nil t))
+          (setq start (point))
+          (when (search-forward ";" nil t) ; find end of doc
+            (setq doc (concat doc "\n\n"
+                              ;; strip off quote and semicolon
+                              (propertize (buffer-substring start (- (point) 2)) 'face nil))))))
       doc)))
 
 (define-derived-mode dbc-mode fundamental-mode "dbc"
