@@ -83,7 +83,7 @@
      ;; message id and name
      ("BO_ \\([0-9]+ [A-Za-z0-9_]+\\)" 1 font-lock-function-name-face t)
      ;; signal name
-     ("SG_ \\([A-Za-z0-9_]+\\)\\( \\| M  \\| m[0-9]+  \\): " 1 font-lock-variable-name-face t)
+     ("SG_ \\([A-Za-z0-9_]+\\) \\(\\|M  \\|m[0-9]+  \\): " 1 font-lock-variable-name-face t)
      ;; number decimal
      ("\\<-?[0-9.]+\\>" . 'font-lock-constant-face)
      ;; junk
